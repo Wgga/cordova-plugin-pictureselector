@@ -67,4 +67,14 @@ module.exports = {
 
         exec(success, onFail, 'pictureselector', 'getPictures', [options]);
     },
+
+    /*
+     * 获取图片Blob
+     * @param onSuccess 成功回调
+     * @param onFail 失败回调
+     * @param params 参数
+     */
+    getPicBlob: function (onSuccess, onFail, params) {
+        exec(onSuccess, onFail, 'pictureselector', 'getPicBlob', [params]);
+    }
 };
