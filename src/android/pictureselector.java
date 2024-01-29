@@ -2,9 +2,11 @@ package com.gua.pictureselector;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -52,9 +54,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import top.zibin.luban.CompressionPredicate;
 import top.zibin.luban.Luban;
@@ -83,8 +91,8 @@ public class pictureselector extends CordovaPlugin {
         pkgName = appContext.getPackageName();
 
         selectorStyle = new PictureSelectorStyle();
-        this.setSelectMainStyle();
-        this.setSelectStyle();
+        this.setSelectMainStyle(this.cordova.getContext());
+        this.setSelectStyle(this.cordova.getContext());
     }
 
     @Override
@@ -92,6 +100,14 @@ public class pictureselector extends CordovaPlugin {
         if (action.equals("getPictures")) {
             JSONObject params = args.getJSONObject(0);
             this.getPictures(params, callbackContext);
+            return true;
+        } else if (action.equals("getPicData")) {
+            JSONObject params = args.getJSONObject(0);
+            // this.getPicData(params, callbackContext);
+            return true;
+        } else if (action.equals("getPicBlob")) {
+            String path = args.getString(0);
+            getPicBlob(path, callbackContext);
             return true;
         }
         return false;
@@ -121,12 +137,12 @@ public class pictureselector extends CordovaPlugin {
                     if(!TextUtils.isEmpty(media.getRealPath())){
                         try {
                             JSONObject obj = new JSONObject();
-                            String compresspath = !TextUtils.isEmpty(media.getCompressPath()) ? media.getCompressPath() : media.getRealPath();
+                            String compressPath = !TextUtils.isEmpty(media.getCompressPath()) ? media.getCompressPath() : media.getRealPath();
                             obj.put("name", media.getFileName());
                             obj.put("path", media.getRealPath());
-                            obj.put("compresspath", compresspath);
+                            obj.put("compressPath", compressPath);
                             obj.put("time", media.getDateAddedTime());
-                            obj.put("size", PictureFileUtils.formatAccurateUnitFileSize(media.getSize()));
+                            obj.put("size", media.getSize());
                             obj.put("type", media.getMimeType());
                             imageObjects.add(obj);
                         } catch (Exception e) {
@@ -144,18 +160,92 @@ public class pictureselector extends CordovaPlugin {
                 }
             }
 
-          @Override
+            @Override
             public void onCancel() {
                 callbackContext.error("取消选择");
             }
         });
     }
 
+    /* private void getPicData(JSONObject params, CallbackContext callbackContext) {
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        executor.execute(() -> {
+            JSONArray array = null;
+            // int quality = 50;
+            try {
+                array = params.getJSONArray("images");
+                // quality = params.getInt("quality");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            ArrayList imageObjects = new ArrayList();
+            for(int i = 0;  i < array.length(); i++) {
+                try {
+                    JSONObject obj = new JSONObject();
+                    JSONObject img = array.getJSONObject(i);
+
+                    Bitmap thumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(img.getString("path")), 38, 38);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    thumbImage.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+                    byte[] imageBytes = baos.toByteArray();
+                    String encodedImage = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+                    baos.close();
+
+                    obj.put("filename", img.getString("name"));
+                    obj.put("time", img.getInt("time"));
+                    obj.put("blob", String.format("data:%s%s%s", img.getString("type"), ";base64,", encodedImage));
+                    obj.put("type", img.getString("type"));
+
+                    imageObjects.add(obj);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                JSONArray imageList = new JSONArray(imageObjects);
+                callbackContext.success(imageList);
+            } catch (Exception e) {
+                Log.getStackTraceString(e);
+            }
+        });
+        executor.shutdown();
+    } */
+
+    // 文件转blob
+    public void getPicBlob(String path, CallbackContext callbackContext) {
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        executor.execute(() -> {
+            try {
+                FileInputStream fis = new FileInputStream(path);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buffer = new byte[2048]; // Adjust buffer size based on your needs
+                int bytesRead;
+                while ((bytesRead = fis.read(buffer)) != -1) {
+                    bos.write(buffer, 0, bytesRead);
+                }
+                bos.flush();
+                fis.close();
+                bos.close();
+                /* ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ContentResolver contentResolver = this.cordova.getActivity().getContentResolver();
+                InputStream is = contentResolver.openInputStream(Uri.parse(path));
+                byte[] buffer = new byte[0xFFFF];
+                for (int len = is.read(buffer); len != -1; len = is.read(buffer)) {
+                    bos.write(buffer, 0, len);
+                } */
+                callbackContext.success(bos.toByteArray());
+            } catch (IOException e) {
+                callbackContext.error("getPicBlob "+e);
+                e.printStackTrace();
+            }
+        });
+        executor.shutdown();
+    }
+
     /**
      * 自定义选择器主题样式(仿微信-全新风格)
      */
-    public static void setSelectMainStyle() {
-        Context context = cordova.getContext();
+    public void setSelectMainStyle(Context context) {
         int num_selector = resource.getIdentifier("ps_default_num_selector", "drawable", pkgName);
         int checkbox_selector = resource.getIdentifier("ps_preview_checkbox_selector", "drawable", pkgName);
         int complete_normal_bg = resource.getIdentifier("ps_select_complete_normal_bg", "drawable", pkgName);
@@ -226,8 +316,7 @@ public class pictureselector extends CordovaPlugin {
     /**
      * 相册列表上弹显示动画
      */
-    public static void setSelectStyle() {
-        Context context = cordova.getContext();
+    public void setSelectStyle(Context context) {
         int anim_up_in = resource.getIdentifier("ps_anim_up_in", "anim", pkgName);
         int anim_down_out = resource.getIdentifier("ps_anim_down_out", "anim", pkgName);
         PictureWindowAnimationStyle animationStyle = new PictureWindowAnimationStyle();
@@ -252,7 +341,7 @@ public class pictureselector extends CordovaPlugin {
 
         @Override
         public void onStartCompress(Context context, ArrayList<Uri> source, OnKeyValueResultCallbackListener call) {
-            Luban.with(context).load(source).ignoreBy(100).setRenameListener(new OnRenameListener() {
+            Luban.with(context).load(source).ignoreBy(3000).setRenameListener(new OnRenameListener() {
                 @Override
                 public String rename(String filePath) {
                     int indexOf = filePath.lastIndexOf(".");
