@@ -167,75 +167,21 @@ public class pictureselector extends CordovaPlugin {
         });
     }
 
-    /* private void getPicData(JSONObject params, CallbackContext callbackContext) {
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        executor.execute(() -> {
-            JSONArray array = null;
-            // int quality = 50;
-            try {
-                array = params.getJSONArray("images");
-                // quality = params.getInt("quality");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            ArrayList imageObjects = new ArrayList();
-            for(int i = 0;  i < array.length(); i++) {
-                try {
-                    JSONObject obj = new JSONObject();
-                    JSONObject img = array.getJSONObject(i);
-
-                    Bitmap thumbImage = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(img.getString("path")), 38, 38);
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    thumbImage.compress(Bitmap.CompressFormat.JPEG, quality, baos);
-                    byte[] imageBytes = baos.toByteArray();
-                    String encodedImage = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-                    baos.close();
-
-                    obj.put("filename", img.getString("name"));
-                    obj.put("time", img.getInt("time"));
-                    obj.put("blob", String.format("data:%s%s%s", img.getString("type"), ";base64,", encodedImage));
-                    obj.put("type", img.getString("type"));
-
-                    imageObjects.add(obj);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                JSONArray imageList = new JSONArray(imageObjects);
-                callbackContext.success(imageList);
-            } catch (Exception e) {
-                Log.getStackTraceString(e);
-            }
-        });
-        executor.shutdown();
-    } */
-
     // 文件转blob
     public void getPicBlob(String path, CallbackContext callbackContext) {
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         executor.execute(() -> {
             try {
-                FileInputStream fis = new FileInputStream(path);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[2048]; // Adjust buffer size based on your needs
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    bos.write(buffer, 0, bytesRead);
-                }
-                bos.flush();
-                fis.close();
-                bos.close();
-                /* ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ContentResolver contentResolver = this.cordova.getActivity().getContentResolver();
-                InputStream is = contentResolver.openInputStream(Uri.parse(path));
-                byte[] buffer = new byte[0xFFFF];
-                for (int len = is.read(buffer); len != -1; len = is.read(buffer)) {
-                    bos.write(buffer, 0, len);
-                } */
-                callbackContext.success(bos.toByteArray());
-            } catch (IOException e) {
-                callbackContext.error("getPicBlob "+e);
+                Bitmap bitmap = Glide.with(cordova.getContext())
+                        .asBitmap()
+                        .load(new File(path))
+                        .submit()
+                        .get();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                callbackContext.success(stream.toByteArray());
+            } catch (Exception e) {
+                callbackContext.error("getPicBlob " + e);
                 e.printStackTrace();
             }
         });
