@@ -2,18 +2,14 @@ package com.gua.pictureselector;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.content.ContentResolver;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +19,7 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.luck.picture.lib.basic.PictureSelector;
 import com.luck.picture.lib.config.PictureMimeType;
 import com.luck.picture.lib.dialog.RemindDialog;
@@ -42,7 +39,6 @@ import com.luck.picture.lib.style.SelectMainStyle;
 import com.luck.picture.lib.style.TitleBarStyle;
 import com.luck.picture.lib.utils.DateUtils;
 import com.luck.picture.lib.utils.DensityUtil;
-import com.luck.picture.lib.utils.PictureFileUtils;
 import com.luck.picture.lib.interfaces.OnResultCallbackListener;
 import com.luck.picture.lib.widget.MediumBoldTextView;
 import com.gua.pictureselector.GlideEngine;
@@ -54,12 +50,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -101,13 +93,9 @@ public class pictureselector extends CordovaPlugin {
             JSONObject params = args.getJSONObject(0);
             this.getPictures(params, callbackContext);
             return true;
-        } else if (action.equals("getPicData")) {
-            JSONObject params = args.getJSONObject(0);
-            // this.getPicData(params, callbackContext);
-            return true;
         } else if (action.equals("getPicBlob")) {
-            String path = args.getString(0);
-            getPicBlob(path, callbackContext);
+            JSONObject params = args.getJSONObject(0);
+            getPicBlob(params, callbackContext);
             return true;
         }
         return false;
@@ -115,70 +103,76 @@ public class pictureselector extends CordovaPlugin {
 
     private void getPictures(JSONObject params, CallbackContext callbackContext) throws JSONException {
         PictureSelector.create(cordova.getActivity())
-        .openGallery(SelectMimeType.ofImage())
-        .setImageEngine(GlideEngine.createGlideEngine())
-        .setSelectorUIStyle(selectorStyle)
-        .setMaxSelectNum(params.getInt("maxSelectNum"))
-        .setSelectionMode(params.getInt("selectionMode"))
-        .setCompressEngine(getCompressFileEngine(params.getBoolean("isCompress")))
-        .setPermissionDeniedListener(getPermissionDeniedListener(params.getBoolean("isPermission")))
-        .setPermissionDescriptionListener(getPermissionDescriptionListener(params.getBoolean("isPermission")))
-        .isDisplayCamera(params.getBoolean("isShowCamera"))
-        .isPreviewImage(params.getBoolean("isShowPreview"))
-        .isOpenClickSound(params.getBoolean("isOpenSound"))
-        .isFastSlidingSelect(params.getBoolean("isSlideSelect"))
-        .isPreviewFullScreenMode(params.getBoolean("isPreviewFull"))
-        .isMaxSelectEnabledMask(params.getBoolean("isMaxSelectMask"))
-        .forResult(new OnResultCallbackListener<LocalMedia>() {
-            @Override
-            public void onResult(ArrayList<LocalMedia> result) {
-                ArrayList imageObjects = new ArrayList();
-                for (LocalMedia media : result) {
-                    if(!TextUtils.isEmpty(media.getRealPath())){
+                .openGallery(SelectMimeType.ofImage())
+                .setImageEngine(GlideEngine.createGlideEngine())
+                .setSelectorUIStyle(selectorStyle)
+                .setMaxSelectNum(params.getInt("maxSelectNum"))
+                .setSelectionMode(params.getInt("selectionMode"))
+                .setCompressEngine(getCompressFileEngine(params.getBoolean("isCompress")))
+                .setPermissionDeniedListener(getPermissionDeniedListener(params.getBoolean("isPermission")))
+                .setPermissionDescriptionListener(getPermissionDescriptionListener(params.getBoolean("isPermission")))
+                .isDisplayCamera(params.getBoolean("isShowCamera"))
+                .isPreviewImage(params.getBoolean("isShowPreview"))
+                .isOpenClickSound(params.getBoolean("isOpenSound"))
+                .isFastSlidingSelect(params.getBoolean("isSlideSelect"))
+                .isPreviewFullScreenMode(params.getBoolean("isPreviewFull"))
+                .isMaxSelectEnabledMask(params.getBoolean("isMaxSelectMask"))
+                .forResult(new OnResultCallbackListener<LocalMedia>() {
+                    @Override
+                    public void onResult(ArrayList<LocalMedia> result) {
+                        ArrayList imageObjects = new ArrayList();
+                        for (LocalMedia media : result) {
+                            if (!TextUtils.isEmpty(media.getRealPath())) {
+                                try {
+                                    JSONObject obj = new JSONObject();
+                                    String compressPath = !TextUtils.isEmpty(media.getCompressPath())
+                                            ? media.getCompressPath()
+                                            : media.getRealPath();
+                                    obj.put("name", media.getFileName());
+                                    obj.put("path", media.getRealPath());
+                                    obj.put("compressPath", compressPath);
+                                    obj.put("time", media.getDateAddedTime());
+                                    obj.put("size", media.getSize());
+                                    obj.put("type", media.getMimeType());
+                                    obj.put("width", media.getWidth());
+                                    obj.put("height", media.getHeight());
+                                    imageObjects.add(obj);
+                                } catch (Exception e) {
+                                    Log.getStackTraceString(e);
+                                }
+                            }
+                            ;
+                        }
                         try {
+                            JSONArray images = new JSONArray(imageObjects);
                             JSONObject obj = new JSONObject();
-                            String compressPath = !TextUtils.isEmpty(media.getCompressPath()) ? media.getCompressPath() : media.getRealPath();
-                            obj.put("name", media.getFileName());
-                            obj.put("path", media.getRealPath());
-                            obj.put("compressPath", compressPath);
-                            obj.put("time", media.getDateAddedTime());
-                            obj.put("size", media.getSize());
-                            obj.put("type", media.getMimeType());
-                            imageObjects.add(obj);
+                            obj.put("images", images);
+                            callbackContext.success(obj);
                         } catch (Exception e) {
                             Log.getStackTraceString(e);
                         }
-                    };
-                }
-                try {
-                    JSONArray images = new JSONArray(imageObjects);
-                    JSONObject obj = new JSONObject();
-                    obj.put("images", images);
-                    callbackContext.success(obj);
-                } catch (Exception e) {
-                    Log.getStackTraceString(e);
-                }
-            }
+                    }
 
-            @Override
-            public void onCancel() {
-                callbackContext.error("取消选择");
-            }
-        });
+                    @Override
+                    public void onCancel() {
+                        callbackContext.error("取消选择");
+                    }
+                });
     }
 
     // 文件转blob
-    public void getPicBlob(String path, CallbackContext callbackContext) {
+    public void getPicBlob(JSONObject params, CallbackContext callbackContext) {
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         executor.execute(() -> {
             try {
                 Bitmap bitmap = Glide.with(cordova.getContext())
                         .asBitmap()
-                        .load(new File(path))
+                        .load(new File(params.getString("path")))
+                        .override((int) (params.getInt("width") / params.getInt("scale")), (int) (params.getInt("height") / params.getInt("scale")))
                         .submit()
                         .get();
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, params.getInt("quality"), stream);
                 callbackContext.success(stream.toByteArray());
             } catch (Exception e) {
                 callbackContext.error("getPicBlob " + e);
@@ -210,7 +204,6 @@ public class pictureselector extends CordovaPlugin {
         int color_9b = resource.getIdentifier("ps_color_9b", "color", pkgName);
         int preview = resource.getIdentifier("ps_preview", "string", pkgName);
         int preview_num = resource.getIdentifier("ps_preview_num", "string", pkgName);
-
 
         SelectMainStyle numberSelectMainStyle = new SelectMainStyle();
         numberSelectMainStyle.setSelectNumberStyle(true);
@@ -252,7 +245,6 @@ public class pictureselector extends CordovaPlugin {
         numberBottomNavBarStyle.setCompleteCountTips(false);
         numberBottomNavBarStyle.setBottomPreviewSelectText(preview_num);
         numberBottomNavBarStyle.setBottomPreviewSelectTextColor(ContextCompat.getColor(context, color_white));
-
 
         selectorStyle.setTitleBarStyle(numberTitleBarStyle);
         selectorStyle.setBottomBarStyle(numberBottomNavBarStyle);
@@ -310,16 +302,16 @@ public class pictureselector extends CordovaPlugin {
 
                 @Override
                 public void onSuccess(String source, File compressFile) {
-                   if (call != null) {
-                       call.onCallback(source, compressFile.getAbsolutePath());
-                   }
+                    if (call != null) {
+                        call.onCallback(source, compressFile.getAbsolutePath());
+                    }
                 }
 
                 @Override
                 public void onError(String source, Throwable e) {
-                   if (call != null) {
-                       call.onCallback(source, null);
-                   }
+                    if (call != null) {
+                        call.onCallback(source, null);
+                    }
                 }
             }).launch();
         }
@@ -359,7 +351,8 @@ public class pictureselector extends CordovaPlugin {
      * @param viewGroup
      * @param permissionArray
      */
-    private static void addPermissionDescription(boolean isHasSimpleXCamera, ViewGroup viewGroup, String[] permissionArray) {
+    private static void addPermissionDescription(boolean isHasSimpleXCamera, ViewGroup viewGroup,
+            String[] permissionArray) {
         int dp10 = DensityUtil.dip2px(viewGroup.getContext(), 10);
         int dp15 = DensityUtil.dip2px(viewGroup.getContext(), 15);
         MediumBoldTextView view = new MediumBoldTextView(viewGroup.getContext());
@@ -381,13 +374,14 @@ public class pictureselector extends CordovaPlugin {
         int startIndex = 0;
         int endOf = startIndex + title.length();
         SpannableStringBuilder builder = new SpannableStringBuilder(explain);
-        builder.setSpan(new AbsoluteSizeSpan(DensityUtil.dip2px(viewGroup.getContext(), 16)), startIndex, endOf, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        builder.setSpan(new AbsoluteSizeSpan(DensityUtil.dip2px(viewGroup.getContext(), 16)), startIndex, endOf,
+                Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         builder.setSpan(new ForegroundColorSpan(0xFF333333), startIndex, endOf, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         view.setText(builder);
         int permission_desc_bg = resource.getIdentifier("ps_permission_desc_bg", "drawable", pkgName);
         view.setBackground(ContextCompat.getDrawable(viewGroup.getContext(), permission_desc_bg));
-        ConstraintLayout.LayoutParams layoutParams =
-                new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
+        ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
         layoutParams.topToBottom = ConstraintSet.PARENT_ID;
         layoutParams.leftToLeft = ConstraintSet.PARENT_ID;
         layoutParams.leftMargin = dp10;
@@ -421,7 +415,7 @@ public class pictureselector extends CordovaPlugin {
 
         @Override
         public void onDenied(Fragment fragment, String[] permissionArray,
-                             int requestCode, OnCallbackListener<Boolean> call) {
+                int requestCode, OnCallbackListener<Boolean> call) {
             String tips;
             if (TextUtils.equals(permissionArray[0], PermissionConfig.CAMERA[0])) {
                 tips = "缺少相机权限\n可能会导致不能使用摄像头功能";
