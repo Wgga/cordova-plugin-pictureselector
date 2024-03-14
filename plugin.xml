@@ -1,95 +1,108 @@
 <?xml version='1.0' encoding='utf-8'?>
 <plugin id="cordova-plugin-pictureselector" version="1.0.0"
-    xmlns="http://apache.org/cordova/ns/plugins/1.0"
-    xmlns:android="http://schemas.android.com/apk/res/android">
-    <name>pictureselector</name>
-    <js-module name="pictureselector" src="www/pictureselector.js">
-        <clobbers target="pictureselector" />
-    </js-module>
-    <platform name="android">
-        <config-file parent="/*" target="res/xml/config.xml">
-            <feature name="pictureselector">
-                <param name="android-package" value="com.gua.pictureselector.pictureselector" />
-            </feature>
-        </config-file>
-        <config-file parent="/*" target="AndroidManifest.xml">
-            <!-- 读取SD卡中的内容权限 -->
-            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-            <!-- 向SD卡中写入内容权限 -->
-            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-            <!-- Android 13版本适配，细化存储权限 -->
-            <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-            <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-            <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-            <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
-            <!-- 相机权限 -->
-            <uses-permission android:name="android.permission.CAMERA" />
-            <!-- 挂载、反挂载外部文件系统权限 -->
-            <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
-            <!-- 访问网络连接权限 -->
-            <uses-permission android:name="android.permission.INTERNET" />
-            <!-- 读取或写入系统设置权限 -->
-            <uses-permission android:name="android.permission.WRITE_SETTINGS" />
-            <!-- WiFi接入的状态以及WLAN热点的信息权限 -->
-            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-            <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" />
-            <!-- 网络信息状态权限 -->
-            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-            <!-- ofAudio模式或使用CameraX录视频(用于麦克风收集声音信息)需要使用此权限 -->
-            <uses-permission android:name="android.permission.RECORD_AUDIO" />
-            <!-- 修改声音设置信息权限 -->
-            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-            <!-- 使用仿微信样式时需要使用此权限，用于预览页长按拖拽震动提醒 -->
-            <uses-permission android:name="android.permission.VIBRATE" />
-            <!-- 读取手机状态权限 -->
-            <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-            <!-- 蓝牙设备权限 -->
-            <uses-permission android:name="android.permission.BLUETOOTH" />
-            <!-- isCameraForegroundService(true);的时候需要使用此权限，拍照开启一个前台服务用于增强保活部分机型 -->
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	xmlns="http://apache.org/cordova/ns/plugins/1.0"
+	xmlns:android="http://schemas.android.com/apk/res/android">
+	<name>pictureselector</name>
+	<js-module name="pictureselector" src="www/pictureselector.js">
+		<clobbers target="pictureselector" />
+	</js-module>
+	<platform name="android">
+		<config-file parent="/*" target="res/xml/config.xml">
+			<feature name="pictureselector">
+				<param name="android-package" value="com.gua.pictureselector.pictureselector" />
+			</feature>
+		</config-file>
 
-            <!--适配Android R包可见性 开始-->
-            <queries package="${applicationId}">
-                <intent>
-                    <action android:name="android.media.action.IMAGE_CAPTURE"></action>
-                </intent>
-                <intent>
-                    <action android:name="android.media.action.ACTION_VIDEO_CAPTURE"></action>
-                </intent>
-            </queries>
-            <!--适配Android R包可见性 结束-->
-        </config-file>
-        <framework src="src/android/gradle/pictureselector.gradle" custom="true" type="gradleReference"/>
-        <source-file src="src/android/pictureselector.java" target-dir="src/com/gua/pictureselector" />
-        <source-file src="src/android/GlideEngine.java" target-dir="src/com/gua/pictureselector" />
+		<!--edit-config 修改 AndroidManifest.xml 添加 android:largeHeap="true"和android:requestLegacyExternalStorage="true" 目前有 bug，改成使用 hook-->
+		<!--Cordova-Android 6.0-->
+		<!--<edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/application">
+			<application android:largeHeap="true" android:requestLegacyExternalStorage="true" />
+		</edit-config>-->
 
-        <resource-file src="src/android/res/anim/ps_anim_modal_in.xml" target="res/anim/ps_anim_modal_in.xml"/>
-        <resource-file src="src/android/res/anim/ps_anim_modal_out.xml" target="res/anim/ps_anim_modal_out.xml"/>
+		<!--Cordova-Android 7.0-->
+		<!--<edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
+			<application android:largeHeap="true" android:requestLegacyExternalStorage="true" />
+		</edit-config>-->
+		<hook type="after_prepare" src="hooks/after_prepare/010-update-android-manifest.js" />
 
-        <resource-file src="src/android/res/drawable/ps_album_bg.xml" target="res/drawable/ps_album_bg.xml"/>
-        <resource-file src="src/android/res/drawable/ps_default_num_selector.xml" target="res/drawable/ps_default_num_selector.xml"/>
-        <resource-file src="src/android/res/drawable/ps_permission_desc_bg.xml" target="res/drawable/ps_permission_desc_bg.xml"/>
-        <resource-file src="src/android/res/drawable/ps_preview_checkbox_selector.xml" target="res/drawable/ps_preview_checkbox_selector.xml"/>
-        <resource-file src="src/android/res/drawable/ps_preview_gallery_bg.xml" target="res/drawable/ps_preview_gallery_bg.xml"/>
-        <resource-file src="src/android/res/drawable/ps_select_complete_bg.xml" target="res/drawable/ps_select_complete_bg.xml"/>
-        <resource-file src="src/android/res/drawable/ps_select_complete_normal_bg.xml" target="res/drawable/ps_select_complete_normal_bg.xml"/>
+		<config-file parent="/*" target="AndroidManifest.xml">
+			<!-- 读取SD卡中的内容权限 -->
+			<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+			<!-- 向SD卡中写入内容权限 -->
+			<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+			<!-- Android 13版本适配，细化存储权限 -->
+			<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+			<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+			<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+			<uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
+			<!-- 相机权限 -->
+			<uses-permission android:name="android.permission.CAMERA" />
+			<!-- 挂载、反挂载外部文件系统权限 -->
+			<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+			<!-- 访问网络连接权限 -->
+			<uses-permission android:name="android.permission.INTERNET" />
+			<!-- 读取或写入系统设置权限 -->
+			<uses-permission android:name="android.permission.WRITE_SETTINGS" />
+			<!-- WiFi接入的状态以及WLAN热点的信息权限 -->
+			<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+			<uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" />
+			<!-- 网络信息状态权限 -->
+			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+			<!-- ofAudio模式或使用CameraX录视频(用于麦克风收集声音信息)需要使用此权限 -->
+			<uses-permission android:name="android.permission.RECORD_AUDIO" />
+			<!-- 修改声音设置信息权限 -->
+			<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+			<!-- 使用仿微信样式时需要使用此权限，用于预览页长按拖拽震动提醒 -->
+			<uses-permission android:name="android.permission.VIBRATE" />
+			<!-- 读取手机状态权限 -->
+			<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+			<!-- 蓝牙设备权限 -->
+			<uses-permission android:name="android.permission.BLUETOOTH" />
+			<!-- isCameraForegroundService(true);的时候需要使用此权限，拍照开启一个前台服务用于增强保活部分机型 -->
+			<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-        <resource-file src="src/android/res/drawable-xxhdpi/ps_ic_grey_arrow.png" target="res/drawable-xxhdpi/ps_ic_grey_arrow.png"/>
-        <resource-file src="src/android/res/drawable-xxhdpi/ps_ic_normal_back.png" target="res/drawable-xxhdpi/ps_ic_normal_back.png"/>
+			<!--适配Android R包可见性 开始-->
+			<queries package="${applicationId}">
+				<intent>
+					<action android:name="android.media.action.IMAGE_CAPTURE"></action>
+				</intent>
+				<intent>
+					<action android:name="android.media.action.ACTION_VIDEO_CAPTURE"></action>
+				</intent>
+			</queries>
+			<!--适配Android R包可见性 结束-->
+		</config-file>
+		<framework src="src/android/gradle/pictureselector.gradle" custom="true" type="gradleReference"/>
+		<source-file src="src/android/pictureselector.java" target-dir="src/com/gua/pictureselector" />
+		<source-file src="src/android/GlideEngine.java" target-dir="src/com/gua/pictureselector" />
 
-        <config-file target="res/values/strings.xml" parent="/resources">
-            <string name="ps_send">完成</string>
-            <string name="ps_send_num">完成(%1$d/%2$d)</string>
-            <string name="ps_select">选择</string>
-            <string name="ps_preview">预览</string>
-            <string name="ps_preview_num">预览(%1$d)</string>
-        </config-file>
-        <config-file target="res/values/colors.xml" parent="/resources">
-            <color name="ps_color_53575e">#53575e</color>
-            <color name="ps_color_white">#FFFFFF</color>
-            <color name="ps_color_9b">#9b9b9b</color>
-            <color name="ps_color_half_grey">#E6393a3e</color>
-            <color name="ps_color_black">#000000</color>
-        </config-file>
-    </platform>
+		<resource-file src="src/android/res/anim/ps_anim_modal_in.xml" target="res/anim/ps_anim_modal_in.xml"/>
+		<resource-file src="src/android/res/anim/ps_anim_modal_out.xml" target="res/anim/ps_anim_modal_out.xml"/>
+
+		<resource-file src="src/android/res/drawable/ps_album_bg.xml" target="res/drawable/ps_album_bg.xml"/>
+		<resource-file src="src/android/res/drawable/ps_default_num_selector.xml" target="res/drawable/ps_default_num_selector.xml"/>
+		<resource-file src="src/android/res/drawable/ps_permission_desc_bg.xml" target="res/drawable/ps_permission_desc_bg.xml"/>
+		<resource-file src="src/android/res/drawable/ps_preview_checkbox_selector.xml" target="res/drawable/ps_preview_checkbox_selector.xml"/>
+		<resource-file src="src/android/res/drawable/ps_preview_gallery_bg.xml" target="res/drawable/ps_preview_gallery_bg.xml"/>
+		<resource-file src="src/android/res/drawable/ps_select_complete_bg.xml" target="res/drawable/ps_select_complete_bg.xml"/>
+		<resource-file src="src/android/res/drawable/ps_select_complete_normal_bg.xml" target="res/drawable/ps_select_complete_normal_bg.xml"/>
+
+		<resource-file src="src/android/res/drawable-xxhdpi/ps_ic_grey_arrow.png" target="res/drawable-xxhdpi/ps_ic_grey_arrow.png"/>
+		<resource-file src="src/android/res/drawable-xxhdpi/ps_ic_normal_back.png" target="res/drawable-xxhdpi/ps_ic_normal_back.png"/>
+
+		<config-file target="res/values/strings.xml" parent="/resources">
+			<string name="ps_send">完成</string>
+			<string name="ps_send_num">完成(%1$d/%2$d)</string>
+			<string name="ps_select">选择</string>
+			<string name="ps_preview">预览</string>
+			<string name="ps_preview_num">预览(%1$d)</string>
+		</config-file>
+		<config-file target="res/values/colors.xml" parent="/resources">
+			<color name="ps_color_53575e">#53575e</color>
+			<color name="ps_color_white">#FFFFFF</color>
+			<color name="ps_color_9b">#9b9b9b</color>
+			<color name="ps_color_half_grey">#E6393a3e</color>
+			<color name="ps_color_black">#000000</color>
+		</config-file>
+	</platform>
 </plugin>

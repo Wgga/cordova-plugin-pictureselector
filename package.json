@@ -1,22 +1,22 @@
 {
-    "name": "cordova-plugin-pictureselector",
-    "version": "1.0.0",
-    "description": "Cordova PictureSelector Plugin",
-    "cordova": {
-        "id": "cordova-plugin-pictureselector",
-        "platforms": [
-            "android"
-        ]
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Wgga/cordova-plugin-pictureselector"
-    },
-    "keywords": [
-        "cordova",
-        "cordova-android",
-        "PictureSelector"
-    ],
-    "author": "Wgga",
-    "license": "Apache-2.0"
+	"name": "cordova-plugin-pictureselector",
+	"version": "1.0.0",
+	"description": "Cordova PictureSelector Plugin",
+	"cordova": {
+		"id": "cordova-plugin-pictureselector",
+		"platforms": [
+			"android"
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Wgga/cordova-plugin-pictureselector"
+	},
+	"keywords": [
+		"cordova",
+		"cordova-android",
+		"PictureSelector"
+	],
+	"author": "Wgga",
+	"license": "Apache-2.0"
 }
