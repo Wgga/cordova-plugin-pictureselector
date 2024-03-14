@@ -89,20 +89,7 @@
 
 		<resource-file src="src/android/res/drawable-xxhdpi/ps_ic_grey_arrow.png" target="res/drawable-xxhdpi/ps_ic_grey_arrow.png"/>
 		<resource-file src="src/android/res/drawable-xxhdpi/ps_ic_normal_back.png" target="res/drawable-xxhdpi/ps_ic_normal_back.png"/>
-
-		<config-file target="res/values/strings.xml" parent="/resources">
-			<string name="ps_send">完成</string>
-			<string name="ps_send_num">完成(%1$d/%2$d)</string>
-			<string name="ps_select">选择</string>
-			<string name="ps_preview">预览</string>
-			<string name="ps_preview_num">预览(%1$d)</string>
-		</config-file>
-		<config-file target="res/values/colors.xml" parent="/resources">
-			<color name="ps_color_53575e">#53575e</color>
-			<color name="ps_color_white">#FFFFFF</color>
-			<color name="ps_color_9b">#9b9b9b</color>
-			<color name="ps_color_half_grey">#E6393a3e</color>
-			<color name="ps_color_black">#000000</color>
-		</config-file>
+		<resource-file src="src/android/res/values/picture_selector_colors.xml" target="res/values/picture_selector_colors.xml"/>
+		<resource-file src="src/android/res/values/picture_selector_strings.xml" target="res/values/picture_selector_strings.xml"/>
 	</platform>
 </plugin>
