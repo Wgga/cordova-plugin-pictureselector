@@ -23,7 +23,7 @@
 		<!--<edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application">
 			<application android:largeHeap="true" android:requestLegacyExternalStorage="true" />
 		</edit-config>-->
-		<hook type="after_prepare" src="hooks/after_prepare/010-update-android-manifest.js" />
+		<hook type="after_prepare" src="hooks/after_prepare/update-android-manifest.js" />
 
 		<config-file parent="/*" target="AndroidManifest.xml">
 			<!-- 读取SD卡中的内容权限 -->
